@@ -48,7 +48,8 @@ model User {
   image         String?
   password      String?
   role          Role      @default(USER)
-  isVerified    Boolean   @default(false)
+  isVerified    Boolean   @default(false)   // email verified
+  isParentVerified Boolean @default(false)  // 🔒 chips-copilot parent-only gate
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
@@ -69,6 +70,11 @@ model User {
   zipCode     String?
   country     String?
   dateOfBirth DateTime?
+
+  // Chips Copilot Relations
+  parentVerification ParentVerification?
+  subscription       Subscription?
+  vaultFiles         VaultFile[]
 
   @@map("users")
 }
@@ -281,4 +287,71 @@ enum WithdrawalStatus {
   PROCESSED
   REJECTED
   CANCELLED
+}
+
+enum VerificationLevel {
+  L1_SELF_ATTESTED
+  L2_CASE_MATCHED
+  L3_DOC_PROVEN
+}
+
+model ParentVerification {
+  id            String             @id @default(cuid())
+  user          User               @relation(fields: [userId], references: [id])
+  userId        String             @unique
+  status        String             @default("PENDING") // PENDING | APPROVED | REJECTED
+  level         VerificationLevel  @default(L1_SELF_ATTESTED)
+  caseNumber    String?
+  docketCourt   String?
+  idDocUrl      String?            // secure object URL
+  selfieUrl     String?
+  matchScore    Float?             // 0..1
+  rejectionReason String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@map("parent_verifications")
+}
+
+model Subscription {
+  id            String    @id @default(cuid())
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String    @unique
+  stripeCustomerId String?
+  stripeSubId    String?
+  plan           String   @default("CORE") // FREE_TRIAL | CORE | PRO
+  status         String   @default("INACTIVE") // ACTIVE | PAST_DUE | CANCELED | INACTIVE
+  currentPeriodEnd DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("subscriptions")
+}
+
+model VaultFile {
+  id              String      @id @default(cuid())
+  user            User        @relation(fields: [userId], references: [id])
+  userId          String
+  name            String
+  path            String      // storage key
+  sizeBytes       Int
+  mimeType        String
+  sha256          String      @unique
+  status          VaultStatus @default(PENDING) // Processing status
+  processingError String?     // Error message if processing fails
+  tags            String[]    @default([])  // e.g., ["COURT_ORDER","TOXICOLOGY"]
+  piiRedacted     Boolean     @default(false)
+  redactionMap    Json?       // Details of what was redacted
+  ocrText         Json?       // { text: string, pages: [{page: number, text: string}] }
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("vault_files")
+}
+
+enum VaultStatus {
+  PENDING     // File uploaded, waiting to be processed
+  PROCESSING  // Currently being OCR'd and redacted
+  READY       // Processing complete, ready for AI analysis
+  FAILED      // Processing failed, see processingError
 }

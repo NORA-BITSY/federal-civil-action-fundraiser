@@ -143,6 +143,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Chips Copilot: Require parent verification for campaign creation
+    if (!(session.user as any).isParentVerified) {
+      return NextResponse.json(
+        { error: 'Only verified parents can create campaigns' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     
     // Extract form fields

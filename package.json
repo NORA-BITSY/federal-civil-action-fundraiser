@@ -12,7 +12,12 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:seed:phase1": "tsx scripts/seed-phase1.ts",
+    "worker:dev": "node scripts/start-worker.js",
+    "worker:prod": "node scripts/worker-prod.js",
+    "worker:direct": "tsx src/workers/vault.worker.ts",
+    "queue:stats": "tsx scripts/queue-stats.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",

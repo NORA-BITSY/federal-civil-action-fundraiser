@@ -40,6 +40,7 @@ export const authOptions: NextAuthOptions = {
           image: user.image,
           role: user.role,
           isVerified: user.isVerified,
+          isParentVerified: user.isParentVerified,
         }
       }
     }),
@@ -60,6 +61,18 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = user.role
         token.isVerified = user.isVerified
+        token.isParentVerified = (user as any).isParentVerified
+      } else if (token?.sub) {
+        // Refresh user data from DB if token exists but no user in params
+        const u = await prisma.user.findUnique({ 
+          where: { id: token.sub }, 
+          select: { role: true, isVerified: true, isParentVerified: true } 
+        })
+        if (u) {
+          token.role = u.role
+          token.isVerified = u.isVerified
+          token.isParentVerified = u.isParentVerified
+        }
       }
       
       if (account?.provider && token.sub) {
@@ -80,6 +93,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub!
         session.user.role = token.role as string
         session.user.isVerified = token.isVerified as boolean
+        ;(session.user as any).isParentVerified = token.isParentVerified as boolean
       }
       return session
     },
@@ -155,12 +169,14 @@ export async function createUser(data: {
       email: data.email,
       password: hashedPassword,
       isVerified: false,
+      isParentVerified: false,
     },
     select: {
       id: true,
       name: true,
       email: true,
       isVerified: true,
+      isParentVerified: true,
       createdAt: true,
     }
   })
