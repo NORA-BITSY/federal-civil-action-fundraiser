@@ -1,7 +1,7 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
 import { Providers } from '@/components/providers/Providers'
-import { EnhancedHeader } from '@/components/layout/EnhancedHeader'
+import { FixedEnhancedHeader } from '@/components/layout/FixedEnhancedHeader'
 import { Footer } from '@/components/layout/Footer'
 import { Toaster } from 'react-hot-toast'
 
@@ -56,7 +56,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body className={`${inter.className} h-full bg-gray-50`}>
         <Providers>
           <div className="min-h-full flex flex-col">
-            <EnhancedHeader />
+            <FixedEnhancedHeader />
             <main className="flex-grow">
               {children}
             </main>

@@ -111,7 +111,7 @@ export default function AboutPage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/patterns/grid.svg')] opacity-5"></div>
+        <div className="absolute inset-0 bg-grid-white/5 opacity-50"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <AnimatedWrapper variant="slideUp">
@@ -318,7 +318,7 @@ export default function AboutPage() {
 
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-r from-blue-600 to-purple-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/patterns/grid.svg')] opacity-10"></div>
+        <div className="absolute inset-0 bg-grid-white/10 opacity-50"></div>
         <div className="relative max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <AnimatedWrapper variant="slideUp">
             <h2 className="text-4xl font-bold text-white mb-6">
