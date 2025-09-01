@@ -13,7 +13,7 @@ interface CampaignPageProps {
 
 async function getCampaign(id: string) {
   try {
-    const campaign = await prisma.campaign.findUnique({
+    const campaign = await prisma.campaign.findFirst({
       where: {
         OR: [
           { id },

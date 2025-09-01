@@ -168,7 +168,10 @@ export async function createDonation(data: {
   userId?: string
 }) {
   return await prisma.donation.create({
-    data,
+    data: {
+      ...data,
+      paymentStatus: data.paymentStatus as any, // Cast to PaymentStatus enum
+    },
     include: {
       campaign: {
         select: {

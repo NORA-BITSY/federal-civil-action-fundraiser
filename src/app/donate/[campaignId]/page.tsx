@@ -10,7 +10,7 @@ interface DonatePageProps {
 
 async function getCampaign(id: string) {
   try {
-    return await prisma.campaign.findUnique({
+    return await prisma.campaign.findFirst({
       where: {
         OR: [
           { id },
