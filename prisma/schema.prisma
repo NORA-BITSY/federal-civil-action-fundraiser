@@ -1,0 +1,284 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role      @default(USER)
+  isVerified    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  campaigns     Campaign[]
+  donations     Donation[]
+  comments      Comment[]
+  updates       CampaignUpdate[]
+  withdrawals   Withdrawal[]
+
+  // Additional profile fields
+  phone       String?
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  country     String?
+  dateOfBirth DateTime?
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+model Campaign {
+  id                String            @id @default(cuid())
+  title             String
+  slug              String            @unique
+  description       String            @db.Text
+  shortDescription  String
+  goalAmount        Decimal           @db.Decimal(10, 2)
+  currentAmount     Decimal           @default(0) @db.Decimal(10, 2)
+  currency          String            @default("USD")
+  status            CampaignStatus    @default(ACTIVE)
+  category          CampaignCategory  @default(LEGAL_DEFENSE)
+  
+  // Case information
+  caseNumber        String?
+  courtName         String?
+  attorneyName      String?
+  attorneyContact   String?
+  legalDocument     String?           // URL to legal documents
+  
+  // Media
+  images            String[]         @default([])
+  videos            String[]         @default([])
+  videoUrl          String?
+  viewCount         Int              @default(0)
+  
+  // Dates
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  startDate         DateTime?
+  endDate           DateTime?
+  
+  // Relations
+  userId            String
+  user              User              @relation(fields: [userId], references: [id])
+  donations         Donation[]
+  comments          Comment[]
+  updates           CampaignUpdate[]
+  withdrawals       Withdrawal[]
+  categories        CampaignCategoryTag[]
+  
+  @@index([status, category, createdAt])
+  @@index([userId, createdAt])
+  
+  @@map("campaigns")
+}
+
+model Donation {
+  id              String        @id @default(cuid())
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("USD")
+  platformFee     Decimal       @db.Decimal(10, 2)
+  stripeFee       Decimal       @db.Decimal(10, 2)
+  netAmount       Decimal       @db.Decimal(10, 2)
+  
+  // Donor information
+  donorName       String?
+  donorEmail      String?
+  isAnonymous     Boolean       @default(false)
+  message         String?       @db.Text
+  
+  // Payment information
+  paymentStatus   PaymentStatus @default(PENDING)
+  stripePaymentId String?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  userId          String?
+  user            User?         @relation(fields: [userId], references: [id])
+  campaignId      String
+  campaign        Campaign      @relation(fields: [campaignId], references: [id])
+  
+  @@index([campaignId, createdAt])
+  @@index([paymentStatus, createdAt])
+  
+  @@map("donations")
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  content    String   @db.Text
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relations
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  
+  @@index([campaignId, isApproved, createdAt])
+  
+  @@map("comments")
+}
+
+model CampaignUpdate {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  images      String[]
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id])
+  
+  @@map("campaign_updates")
+}
+
+model Withdrawal {
+  id              String           @id @default(cuid())
+  amount          Decimal          @db.Decimal(10, 2)
+  currency        String           @default("USD")
+  status          WithdrawalStatus @default(PENDING)
+  description     String?          @db.Text
+  
+  // Bank information
+  bankAccountLast4 String?
+  routingNumber   String?
+  
+  // Processing
+  processedAt     DateTime?
+  adminNotes      String?          @db.Text
+  
+  // Timestamps
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  // Relations
+  userId          String
+  user            User             @relation(fields: [userId], references: [id])
+  campaignId      String
+  campaign        Campaign         @relation(fields: [campaignId], references: [id])
+  
+  @@map("withdrawals")
+}
+
+model CampaignCategoryTag {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  slug       String   @unique
+  color      String?
+  createdAt  DateTime @default(now())
+  
+  campaigns  Campaign[]
+  
+  @@map("campaign_category_tags")
+}
+
+// Enums
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+  UNDER_REVIEW
+}
+
+enum CampaignCategory {
+  LEGAL_DEFENSE
+  CIVIL_RIGHTS
+  CRIMINAL_DEFENSE
+  FAMILY_LAW
+  BUSINESS_LAW
+  PERSONAL_INJURY
+  IMMIGRATION
+  APPEALS
+  CLASS_ACTION
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  PROCESSED
+  REJECTED
+  CANCELLED
+}
